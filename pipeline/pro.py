@@ -1,24 +1,19 @@
+from collections import Counter
+import unicodedata
 from sklearn.base import BaseEstimator, TransformerMixin
 from nltk.corpus import stopwords
 import pandas as pd
 import nltk
 import enchant
 import re
-import language_tool_python
-
 
 
 class TextPreprocessor(BaseEstimator, TransformerMixin):
     def __init__(self):
         print("Reviews initialized")
         self.en_us = enchant.Dict("en_US")
-        self.es_es = enchant.Dict("es_ES")
         self.palabras_no_existe = []
-        """
-        self.stop_words = set(stopwords.words('english'))
-        nltk.download('stopwords')
-        self.stop_words = list(stopwords.words('spanish'))
-        self.stop_words_e = list(stopwords.words('english'))"""
+
 
     def fit(self, X, y=None):
         print("Fitting reviews...")
@@ -29,9 +24,10 @@ class TextPreprocessor(BaseEstimator, TransformerMixin):
         return self.preprocess(X)
 
     def verificar_palabra(self,text):
-
+        
+        """and self.es_es.check(word) == False"""
         for word in text.split(" "):
-            if self.en_us.check(word)== False and self.es_es.check(word) == False:
+            if self.en_us.check(word)== False :
                 if word not in self.palabras_no_existe:
                     self.palabras_no_existe.append(word)
         return self.palabras_no_existe
@@ -45,15 +41,13 @@ class TextPreprocessor(BaseEstimator, TransformerMixin):
         nltk.download('stopwords')
         stop_words = list(stopwords.words('spanish'))
         stop_words_e = list(stopwords.words('english'))
-
-        movies_df = movies_df.drop('Unnamed: 0', axis=1)
-        
+            
         # Eliminando caracteres no alfanumericos y pasamos los caracteres a minusculas
         movies_df['review_es'] = movies_df['review_es'].apply(lambda x: re.sub(r'\W+', ' ', x).lower())
         
         # Eliminamos las stopwords de español y ingles
-        movies_df['review_es'] = movies_df['review_en'].apply(lambda x: " ".join([word for word in x.split() if word not in stop_words]))
-        movies_df['review_en'] = movies_df['review_en'].apply(lambda x: " ".join([word for word in x.split() if word not in stop_words_e]))
+        movies_df['review_es'] = movies_df['review_es'].apply(lambda x: " ".join([word for word in x.split() if word not in stop_words]))
+        movies_df['review_es'] = movies_df['review_es'].apply(lambda x: " ".join([word for word in x.split() if word not in stop_words_e]))
 
         #Eliminamos las palabras que no pertenecen al Español ni Inglés
         lista_correcciones =  []
@@ -63,6 +57,22 @@ class TextPreprocessor(BaseEstimator, TransformerMixin):
 
         movies_df['review_es'] = movies_df['review_es'].apply(lambda x: re.sub(r'\b(' + '|'.join(lista_correcciones) + r')\b', x))
         
+
+        #Remover las palabras con poca frecuencia de apariciones
+        word_count = Counter()
+        for text in movies_df['review_es']:
+            for word in text.split():
+                word_count[word] += 1
+        RARE_WORDS = set(word for (word, wc) in word_count.most_common()[:-10:-1])
+        movies_df['review_es'] = movies_df['review_es'].apply(lambda x: " ".join([word for word in x.split() if word not in RARE_WORDS]))
+
+        # Remover las palabras con alta frecuencia de apariciones
+        FREQUENT_WORDS = set(word for (word, wc) in word_count.most_common(10))  
+        movies_df['review_es']= movies_df['review_es'].apply(lambda x: " ".join([word for word in x.split() if word not in FREQUENT_WORDS]))
+
+        
+        # Eliminamos las tildes
+        movies_df['review_es'] = movies_df['review_es'].apply(lambda x: ''.join(c for c in (unicodedata.normalize('NFD', x)) if unicodedata.category(c) != 'Mn'))
 
         print("Finished preprocessing text...")
         return movies_df
