@@ -32,7 +32,7 @@ class TextPreprocessor(BaseEstimator, TransformerMixin):
                     self.palabras_no_existe.append(word)
         return self.palabras_no_existe
 
-    def preprocess(self, df) -> pd.DataFrame:
+    def preprocess(self, df:pd.DataFrame) -> pd.DataFrame:
         print("Preprocessing text...")
         # convert series to dataframe
         movies_df = pd.DataFrame(df)
@@ -75,5 +75,7 @@ class TextPreprocessor(BaseEstimator, TransformerMixin):
         movies_df['review_es'] = movies_df['review_es'].apply(lambda x: ''.join(c for c in (unicodedata.normalize('NFD', x)) if unicodedata.category(c) != 'Mn'))
         print("data: ",movies_df)
         
+        movies = movies_df['review_es']
+
         print("Finished preprocessing text...")
-        return movies_df
+        return movies
