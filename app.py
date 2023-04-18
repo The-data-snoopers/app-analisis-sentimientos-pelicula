@@ -10,11 +10,9 @@ load_dotenv()
 app = Flask(__name__)
 
 
-
-
 @app.route('/')
 def principal():
-    return redirect(url_for('about.sobre_nosotros'))
+    return redirect(url_for('prediccion.crear_prediccion'))
 
 
 app.register_blueprint(prediccion, url_prefix='/')
