@@ -22,7 +22,7 @@ def crear_prediccion():
         return render_template('index.html', formulario=formulario, result="A la persona le gusta la pelicula")
         ## pasar datos al model
         
-        
+        """
         prediccion = Comentario( area=texto)
 
         df = pd.DataFrame(prediccion.dict(), columns=prediccion.dict().keys(), index=[0])
@@ -31,7 +31,7 @@ def crear_prediccion():
         result = model.predict(df)
         res =  np.round(result[0], 5),
         return res
-        #print("resultado prediccion: ", result)
+        #print("resultado prediccion: ", result)"""
 
     else:
       
