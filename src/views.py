@@ -34,6 +34,6 @@ def crear_prediccion():
         #print("resultado prediccion: ", result)"""
 
     else:
-        print("aaaaa")
-        return render_template('homes.html')
+      
+        return render_template('index.html', formulario=formulario)
     
