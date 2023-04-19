@@ -12,6 +12,7 @@ class TextPreprocessor(BaseEstimator, TransformerMixin):
     def __init__(self):
         print("Reviews initialized")
         self.en_us = enchant.Dict("en_US")
+        self.es_es = enchant.Dict("es_ES")
         self.palabras_no_existe = []
 
 
@@ -27,7 +28,7 @@ class TextPreprocessor(BaseEstimator, TransformerMixin):
         
         """and self.es_es.check(word) == False"""
         for word in text.split(" "):
-            if self.en_us.check(word)== False :
+            if self.en_us.check(word)== False and self.es_es.check(word)==False:
                 if word not in self.palabras_no_existe:
                     self.palabras_no_existe.append(word)
         return self.palabras_no_existe
