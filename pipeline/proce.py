@@ -13,7 +13,7 @@ class TextPreprocessor(BaseEstimator, TransformerMixin):
         print("Reviews initialized")
         self.en_us = enchant.Dict("en_US")
         self.es_es = enchant.Dict("es_ES")
-        self.palabras_no_existe = []
+        #self.palabras_no_existe = []
 
 
     def fit(self, X, y=None):
@@ -24,14 +24,20 @@ class TextPreprocessor(BaseEstimator, TransformerMixin):
         print("Transforming reviews...")
         return self.preprocess(X)
 
-    def verificar_palabra(self,text):
-        
-        """and self.es_es.check(word) == False"""
+   
+
+    def remove_words(self,text):
+
+        palabras_no_existe = []
         for word in text.split(" "):
-            if self.en_us.check(word)== False and self.es_es.check(word)==False:
-                if word not in self.palabras_no_existe:
-                    self.palabras_no_existe.append(word)
-        return self.palabras_no_existe
+            if self.en_us.check(word)== False and self.es_es.check(word) == False:
+                if word not in palabras_no_existe:
+                    palabras_no_existe.append(word)
+
+        regex = r'\b(' + '|'.join(palabras_no_existe) + r')\b'
+        texto_sin_palabras_raras = re.sub(regex, '', text)
+
+        return texto_sin_palabras_raras
 
     def preprocess(self, df:pd.DataFrame) -> pd.DataFrame:
         print("Preprocessing text...")
@@ -52,12 +58,8 @@ class TextPreprocessor(BaseEstimator, TransformerMixin):
         movies_df['review_es'] = movies_df['review_es'].apply(lambda x: " ".join([word for word in x.split() if word not in stop_words_e]))
 
         #Eliminamos las palabras que no pertenecen al Español ni Inglés
-        lista_correcciones =  []
-        for value in movies_df['review_es']:
-            for word in self.verificar_palabra(value):
-                lista_correcciones.append(word)
-        text=r'\b(' + '|'.join(lista_correcciones) + r')\b'
-        movies_df['review_es'] = movies_df['review_es'].apply(lambda x: re.sub(text,' ', x))
+        movies_df['review_es'] = movies_df['review_es'].apply(lambda x: self.remove_words(x))
+        
 
         #Remover las palabras con poca frecuencia de apariciones
         word_count = Counter()
@@ -73,7 +75,6 @@ class TextPreprocessor(BaseEstimator, TransformerMixin):
         
         # Eliminamos las tildes
         movies_df['review_es'] = movies_df['review_es'].apply(lambda x: ''.join(c for c in (unicodedata.normalize('NFD', x)) if unicodedata.category(c) != 'Mn'))
-        print("data: ",movies_df)
         movies = movies_df['review_es']
         print("Finished preprocessing text...")
 
