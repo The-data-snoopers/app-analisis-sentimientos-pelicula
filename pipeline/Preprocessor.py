@@ -8,7 +8,7 @@ import enchant
 import re
 
 
-class TextPreprocessor(BaseEstimator, TransformerMixin):
+class Preprocessor(BaseEstimator, TransformerMixin):
     def __init__(self):
         print("Reviews initialized")
         self.en_us = enchant.Dict("en_US")

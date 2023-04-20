@@ -1,9 +1,12 @@
-from flask import Blueprint, request, jsonify, render_template, abort, redirect, url_for
+from flask import Blueprint, request, render_template, abort, redirect, url_for
 import pandas as pd
 import numpy as np
 from joblib import load
 from src.text_form import Text_form
 from src.models import Comentario
+import pickle as pkl
+from src.model_prediction import Model
+
 
 
 prediccion = Blueprint('prediccion', __name__, template_folder='./templates')
@@ -19,19 +22,23 @@ def crear_prediccion():
     if request.method == 'POST' and formulario.validate():
         texto = formulario.texto.data
         print("texto: ", texto)
-        return render_template('index.html', formulario=formulario, result="A la persona le gusta la pelicula")
-        ## pasar datos al model
-        
+       
+
+        texto = Comentario( comentario=texto)
+
+        df = pd.DataFrame(texto.dict(), columns=texto.dict().keys(), index=[0])
         """
-        prediccion = Comentario( area=texto)
-
-        df = pd.DataFrame(prediccion.dict(), columns=prediccion.dict().keys(), index=[0])
-
-        model = load("src/assets/model.joblib")
+        model = load("src/pipeline_peliculas.joblib")
         result = model.predict(df)
+        """
+    
+        modelo = Model()
+        result = modelo.make_predictions(df)
+        
         res =  np.round(result[0], 5),
-        return res
-        #print("resultado prediccion: ", result)"""
+        resultado_modelo = int(res[0])
+        print("resultado prediccion: ", resultado_modelo)
+        return render_template('index.html', formulario=formulario, result=resultado_modelo)
 
     else:
       
