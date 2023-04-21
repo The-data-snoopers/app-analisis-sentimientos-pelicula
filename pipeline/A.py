@@ -8,11 +8,9 @@ import enchant
 import re
 
 
-class Preprocessor(BaseEstimator, TransformerMixin):
+class A(BaseEstimator, TransformerMixin):
     def __init__(self):
-        print("Reviews initialized")
-        self.en_us = enchant.Dict("en_US")
-        self.es_es = enchant.Dict("es_ES")
+        pass
         #self.palabras_no_existe = []
 
 
@@ -27,10 +25,12 @@ class Preprocessor(BaseEstimator, TransformerMixin):
    
 
     def remove_words(self,text):
-
+        
+        en_us = enchant.Dict("en_US")
+        es_es = enchant.Dict("es_ES")
         palabras_no_existe = []
         for word in text.split(" "):
-            if self.en_us.check(word)== False and self.es_es.check(word) == False:
+            if en_us.check(word)== False and es_es.check(word) == False:
                 if word not in palabras_no_existe:
                     palabras_no_existe.append(word)
 
@@ -58,7 +58,7 @@ class Preprocessor(BaseEstimator, TransformerMixin):
         movies_df['review_es'] = movies_df['review_es'].apply(lambda x: " ".join([word for word in x.split() if word not in stop_words_e]))
 
         #Eliminamos las palabras que no pertenecen al Español ni Inglés
-        movies_df['review_es'] = movies_df['review_es'].apply(lambda x: self.remove_words(x))
+        #movies_df['review_es'] = movies_df['review_es'].apply(lambda x: self.remove_words(x))
         
 
         #Remover las palabras con poca frecuencia de apariciones
@@ -76,7 +76,7 @@ class Preprocessor(BaseEstimator, TransformerMixin):
         # Eliminamos las tildes
         movies_df['review_es'] = movies_df['review_es'].apply(lambda x: ''.join(c for c in (unicodedata.normalize('NFD', x)) if unicodedata.category(c) != 'Mn'))
         movies = movies_df['review_es']
-        print("Finished preprocessing text...")
+        print("Termino")
 
 
         return movies

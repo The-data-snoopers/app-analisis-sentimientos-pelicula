@@ -1,78 +1,58 @@
-from collections import Counter
-import unicodedata
-from sklearn.base import BaseEstimator, TransformerMixin
-from nltk.corpus import stopwords
 import pandas as pd
+import matplotlib.pyplot as plt
 import nltk
 import enchant
+import pickle as pkl
+from joblib import dump, load
 import re
+from collections import Counter
+from nltk.corpus import stopwords
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import FunctionTransformer
+from nltk.tokenize import TweetTokenizer
+from sklearn.metrics import f1_score, precision_score, recall_score, confusion_matrix, ConfusionMatrixDisplay
+from A import A
 
 
-class TextPreprocessor(BaseEstimator, TransformerMixin):
-    def __init__(self):
-        print("Reviews initialized")
-        self.en_us = enchant.Dict("en_US")
-        self.palabras_no_existe = []
+
+# Cargar los datos en un DataFrame de pandas
+movies_df = pd.read_csv('pipeline/data/MovieReviews.csv', sep=',', encoding="utf-8", index_col=0)
 
 
-    def fit(self, X, y=None):
-        print("Fitting reviews...")
-        return self
+# Función para tokenizar los tweets
+nltk.download('punkt')
+def tokenizer(text):
+    tt = TweetTokenizer()
+    return tt.tokenize(text)
 
-    def transform(self, X, y=None):
-        print("Transforming reviews...")
-        return self.preprocess(X)
+# Descargando las stopwords
+nltk.download('stopwords')
+stop_words_complete = list(stopwords.words('spanish')) + list(stopwords.words('english'))
 
-    def verificar_palabra(self,text):
-        
-        """and self.es_es.check(word) == False"""
-        for word in text.split(" "):
-            if self.en_us.check(word)== False :
-                if word not in self.palabras_no_existe:
-                    self.palabras_no_existe.append(word)
-        return self.palabras_no_existe
 
-    def preprocess(self, df: pd.DataFrame) -> pd.DataFrame:
-        print("Preprocessing text...")
-        # convert series to dataframe
-        movies_df = pd.DataFrame(df)
+# Crear el pipeline
+text_pipeline = Pipeline([
+    ('preprocessing', A()),
+    ('vectorizer', CountVectorizer(tokenizer=tokenizer, stop_words=stop_words_complete, lowercase=True)),
+    ('classifier', RandomForestClassifier(random_state=2, n_estimators=200, min_samples_split=4, max_depth=3, criterion='entropy'))
+])
 
-        # Descargando las stopwords
-        nltk.download('stopwords')
-        stop_words = list(stopwords.words('spanish'))
-        stop_words_e = list(stopwords.words('english'))
-            
-        # Eliminando caracteres no alfanumericos y pasamos los caracteres a minusculas
-        movies_df['review_es'] = movies_df['review_es'].apply(lambda x: re.sub(r'\W+', ' ', x).lower())
-        
-        # Eliminamos las stopwords de español y ingles
-        movies_df['review_es'] = movies_df['review_es'].apply(lambda x: " ".join([word for word in x.split() if word not in stop_words]))
-        movies_df['review_es'] = movies_df['review_es'].apply(lambda x: " ".join([word for word in x.split() if word not in stop_words_e]))
 
-        #Eliminamos las palabras que no pertenecen al Español ni Inglés
-        lista_correcciones =  []
-        for index, value in movies_df['review_es'].iteritems():
-            for word in self.verificar_palabra(value):
-                lista_correcciones.append(word)
+# Dividir los datos en conjuntos de entrenamiento y prueba
+X_train, X_test, y_train, y_test = train_test_split(movies_df['review_es'], movies_df['sentimiento'], test_size=0.2, random_state=42)
 
-        movies_df['review_es'] = movies_df['review_es'].apply(lambda x: re.sub(r'\b(' + '|'.join(lista_correcciones) + r')\b', x))
-        
 
-        #Remover las palabras con poca frecuencia de apariciones
-        word_count = Counter()
-        for text in movies_df['review_es']:
-            for word in text.split():
-                word_count[word] += 1
-        RARE_WORDS = set(word for (word, wc) in word_count.most_common()[:-10:-1])
-        movies_df['review_es'] = movies_df['review_es'].apply(lambda x: " ".join([word for word in x.split() if word not in RARE_WORDS]))
+# Ajustar el pipeline a los datos de entrenamiento
+text_pipeline.fit(X_train, y_train)
+print("Pipeline fitted- paso por aquí...")
 
-        # Remover las palabras con alta frecuencia de apariciones
-        FREQUENT_WORDS = set(word for (word, wc) in word_count.most_common(10))  
-        movies_df['review_es']= movies_df['review_es'].apply(lambda x: " ".join([word for word in x.split() if word not in FREQUENT_WORDS]))
+pipeline_path =  "./pipeline/pipeline_peliculas.joblib"
+dump(text_pipeline, pipeline_path)
 
-        
-        # Eliminamos las tildes
-        movies_df['review_es'] = movies_df['review_es'].apply(lambda x: ''.join(c for c in (unicodedata.normalize('NFD', x)) if unicodedata.category(c) != 'Mn'))
-
-        print("Finished preprocessing text...")
-        return movies_df
+pipeline_path =  "./pipeline/pipeline_peliculas.pkl"
+with open(pipeline_path, 'wb') as file:
+    pkl.dump(text_pipeline, file)

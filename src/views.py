@@ -5,7 +5,7 @@ from joblib import load
 from src.text_form import Text_form
 from src.models import Comentario
 import pickle as pkl
-from src.model_prediction import Model
+from src.model_llamado import llamar_modelo
 
 
 
@@ -27,14 +27,12 @@ def crear_prediccion():
         texto = Comentario( comentario=texto)
 
         df = pd.DataFrame(texto.dict(), columns=texto.dict().keys(), index=[0])
-        """
-        model = load("src/pipeline_peliculas.joblib")
-        result = model.predict(df)
-        """
-    
-        modelo = Model()
-        result = modelo.make_predictions(df)
         
+    
+        #modelo = Model(df.columns)
+        #result = modelo.make_predictions(df)
+
+        result = llamar_modelo(df)
         res =  np.round(result[0], 5),
         resultado_modelo = int(res[0])
         print("resultado prediccion: ", resultado_modelo)
